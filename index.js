@@ -108,13 +108,12 @@ async function run() {
     // save a employee in db
     app.put("/user", async (req, res) => {
       const user = req.body;
-      // console.log(user)
       const query = { email: user?.email };
       // check user already exist
       const isExist = await usersCollection.findOne(query);
       if (isExist) {
-        // if(user.status === 'request'){
-        //   const result = await usersCollection.updateOne(query, {$set: {status: user?.status}})
+        // if(user?.verified === 'false'){
+        //   const result = await usersCollection.updateOne(query, {$set: {verified: true}})
         //   return res.send(result)
         // } else{
         //   return res.send(isExist)
@@ -145,6 +144,19 @@ async function run() {
       res.send(result);
     });
 
+    // update verified status in db
+    app.patch("/user/:email", async (req, res) => {
+      const email = req.params.email;
+      const verified = req.body;
+      console.log(verified);
+      const query = { email: email };
+      const updateDoc = {
+        $set: verified,
+      };
+      const result = await usersCollection.updateOne(query, updateDoc);
+      res.send(result);
+    });
+
     // save work sheet in db
     app.post("/work", async (req, res) => {
       const workSheet = req.body;
@@ -152,13 +164,13 @@ async function run() {
       res.send(result);
     });
 
-       // get my work sheet data by email
-       app.get("/mywork/:email", async (req, res) => {
-        const email = req.params.email;
-        let query = { email: email };
-        const result = await workSheetCollection.find(query).toArray();
-        res.send(result);
-      });
+    // get my work sheet data by email
+    app.get("/mywork/:email", async (req, res) => {
+      const email = req.params.email;
+      let query = { email: email };
+      const result = await workSheetCollection.find(query).toArray();
+      res.send(result);
+    });
 
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
