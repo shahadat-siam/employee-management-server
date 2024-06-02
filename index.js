@@ -76,6 +76,18 @@ async function run() {
       next();
     };
 
+      // verify host meddlewere 
+      const verifyHost = async (req, res, next) => {
+        const user = req.user
+        const query = {email : user?.email}
+        const result = await usersCollection.findOne(query)
+        
+        if(!result || result?.role !== 'HR'){
+          return res.status(401).send({message: 'unauthorize access'})
+        }
+        next()
+      }
+
     // Logout
     app.get("/logout", async (req, res) => {
       try {
