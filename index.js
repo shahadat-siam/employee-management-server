@@ -48,6 +48,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     const usersCollection = client.db("TalentIQ").collection("user");
+    const workSheetCollection = client.db("TalentIQ").collection("worksheet");
 
     // auth related api
     app.post("/jwt", async (req, res) => {
@@ -76,17 +77,17 @@ async function run() {
       next();
     };
 
-      // verify host meddlewere 
-      const verifyHost = async (req, res, next) => {
-        const user = req.user
-        const query = {email : user?.email}
-        const result = await usersCollection.findOne(query)
-        
-        if(!result || result?.role !== 'HR'){
-          return res.status(401).send({message: 'unauthorize access'})
-        }
-        next()
+    // verify host meddlewere
+    const verifyHost = async (req, res, next) => {
+      const user = req.user;
+      const query = { email: user?.email };
+      const result = await usersCollection.findOne(query);
+
+      if (!result || result?.role !== "HR") {
+        return res.status(401).send({ message: "unauthorize access" });
       }
+      next();
+    };
 
     // Logout
     app.get("/logout", async (req, res) => {
@@ -143,6 +144,21 @@ async function run() {
       const result = await usersCollection.findOne({ email });
       res.send(result);
     });
+
+    // save work sheet in db
+    app.post("/work", async (req, res) => {
+      const workSheet = req.body;
+      const result = await workSheetCollection.insertOne(workSheet);
+      res.send(result);
+    });
+
+       // get my work sheet data by email
+       app.get("/mywork/:email", async (req, res) => {
+        const email = req.params.email;
+        let query = { email: email };
+        const result = await workSheetCollection.find(query).toArray();
+        res.send(result);
+      });
 
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
