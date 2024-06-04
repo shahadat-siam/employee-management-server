@@ -49,6 +49,7 @@ async function run() {
   try {
     const usersCollection = client.db("TalentIQ").collection("user");
     const workSheetCollection = client.db("TalentIQ").collection("worksheet");
+    const messageCollection = client.db("TalentIQ").collection("message");
 
     // auth related api
     app.post("/jwt", async (req, res) => {
@@ -171,6 +172,14 @@ async function run() {
       const result = await workSheetCollection.find(query).toArray();
       res.send(result);
     });
+
+     // save message in db
+     app.post("/message", async (req, res) => {
+      const data = req.body;
+      const result = await messageCollection.insertOne(data);
+      res.send(result);
+    });
+
 
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
