@@ -51,6 +51,7 @@ async function run() {
     const usersCollection = client.db("TalentIQ").collection("user");
     const workSheetCollection = client.db("TalentIQ").collection("worksheet");
     const messageCollection = client.db("TalentIQ").collection("message");
+    const salaryPaidCollection = client.db("TalentIQ").collection("paid");
 
     // auth related api
     app.post("/jwt", async (req, res) => {
@@ -91,23 +92,30 @@ async function run() {
       next();
     };
 
-        // create-pament -intent
-        app.post("/create-payment-intent", verifyToken, async (req, res) => {
-          const salary = req.body.salary; 
-          const salaryInCent = parseFloat(salary) * 100; 
-          if (!salary || salaryInCent < 1) return;
-          // genarate client secret
-          const { client_secret } = await stripe.paymentIntents.create({
-            amount: salaryInCent,
-            currency: "usd",
-            // # In the latest version of the API, specifying the `automatic_payment_methods` parameter is optional because Stripe enables its functionality by default.
-            automatic_payment_methods: {
-              enabled: true,
-            },
-          });
-          //send client secret as response
-          res.send({ clientSecret: client_secret });
-        });
+    // create-pament -intent
+    app.post("/create-payment-intent", verifyToken, async (req, res) => {
+      const salary = req.body.salary;
+      const salaryInCent = parseFloat(salary) * 100;
+      if (!salary || salaryInCent < 1) return;
+      // genarate client secret
+      const { client_secret } = await stripe.paymentIntents.create({
+        amount: salaryInCent,
+        currency: "usd",
+        // # In the latest version of the API, specifying the `automatic_payment_methods` parameter is optional because Stripe enables its functionality by default.
+        automatic_payment_methods: {
+          enabled: true,
+        },
+      });
+      //send client secret as response
+      res.send({ clientSecret: client_secret });
+    });
+
+       // save paid salary employee data in db
+       app.post("/paid", verifyToken, async (req, res) => {
+        const employeeData = req.body;
+        const result = await salaryPaidCollection.insertOne(employeeData); 
+        res.send(result);
+      });
 
     // Logout
     app.get("/logout", async (req, res) => {
@@ -192,13 +200,12 @@ async function run() {
       res.send(result);
     });
 
-     // save message in db
-     app.post("/message", async (req, res) => {
+    // save message in db
+    app.post("/message", async (req, res) => {
       const data = req.body;
       const result = await messageCollection.insertOne(data);
       res.send(result);
     });
-
 
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
