@@ -3,7 +3,7 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const stripe = require("stripe")(process.env.SECREET_KEY);
 const port = process.env.PORT || 5000;
@@ -110,12 +110,12 @@ async function run() {
       res.send({ clientSecret: client_secret });
     });
 
-       // save paid salary employee data in db
-       app.post("/paid", verifyToken, async (req, res) => {
-        const employeeData = req.body;
-        const result = await salaryPaidCollection.insertOne(employeeData); 
-        res.send(result);
-      });
+    // save paid salary employee data in db
+    app.post("/paid", verifyToken, async (req, res) => {
+      const employeeData = req.body;
+      const result = await salaryPaidCollection.insertOne(employeeData);
+      res.send(result);
+    });
 
     // Logout
     app.get("/logout", async (req, res) => {
@@ -171,6 +171,14 @@ async function run() {
       const result = await usersCollection.findOne({ email });
       res.send(result);
     });
+
+        // get single data by id from bd
+        app.get("/users/:id", async (req, res) => {
+          const id = req.params.id;
+          const query = { _id: new ObjectId(id) };
+          const result = await usersCollection.findOne(query);
+          res.send(result);
+        });
 
     // update verified status in db
     app.patch("/user/:email", async (req, res) => {
