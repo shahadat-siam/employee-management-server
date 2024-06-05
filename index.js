@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const { MongoClient, ServerApiVersion } = require("mongodb");
 const app = express();
+const stripe = require("stripe")(process.env.SECREET_KEY);
 const port = process.env.PORT || 5000;
 
 //------ middlewere ----
@@ -19,12 +20,12 @@ app.use(cookieParser());
 
 // Verify Token Middleware
 const verifyToken = async (req, res, next) => {
-  const token = req.cookies?.token;
+  const tokeen = req.cookies?.tokeen;
   // console.log(token);
-  if (!token) {
+  if (!tokeen) {
     return res.status(401).send({ message: "unauthorized access" });
   }
-  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+  jwt.verify(tokeen, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
     if (err) {
       console.log(err);
       return res.status(401).send({ message: "unauthorized access" });
@@ -89,6 +90,24 @@ async function run() {
       }
       next();
     };
+
+        // create-pament -intent
+        app.post("/create-payment-intent", verifyToken, async (req, res) => {
+          const salary = req.body.salary; 
+          const salaryInCent = parseFloat(salary) * 100; 
+          if (!salary || salaryInCent < 1) return;
+          // genarate client secret
+          const { client_secret } = await stripe.paymentIntents.create({
+            amount: salaryInCent,
+            currency: "usd",
+            // # In the latest version of the API, specifying the `automatic_payment_methods` parameter is optional because Stripe enables its functionality by default.
+            automatic_payment_methods: {
+              enabled: true,
+            },
+          });
+          //send client secret as response
+          res.send({ clientSecret: client_secret });
+        });
 
     // Logout
     app.get("/logout", async (req, res) => {
