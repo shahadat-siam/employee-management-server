@@ -113,7 +113,16 @@ async function run() {
     // save paid salary employee data in db
     app.post("/paid", verifyToken, async (req, res) => {
       const employeeData = req.body;
+      // console.log(employeeData)
       const result = await salaryPaidCollection.insertOne(employeeData);
+      res.send(result);
+    });
+
+    // get a employee paid salary data by email in db
+    app.get("/paid/:email", async (req, res) => {
+      const email = req.params.email;
+      // console.log(email);
+      const result = await salaryPaidCollection.find({ email }).toArray();
       res.send(result);
     });
 
@@ -172,19 +181,19 @@ async function run() {
       res.send(result);
     });
 
-        // get single data by id from bd
-        app.get("/users/:id", async (req, res) => {
-          const id = req.params.id;
-          const query = { _id: new ObjectId(id) };
-          const result = await usersCollection.findOne(query);
-          res.send(result);
-        });
+    // get single data by id from bd
+    app.get("/users/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await usersCollection.findOne(query);
+      res.send(result);
+    });
 
     // update verified status in db
     app.patch("/user/:email", async (req, res) => {
       const email = req.params.email;
       const verified = req.body;
-      console.log(verified);
+      // console.log(verified);
       const query = { email: email };
       const updateDoc = {
         $set: verified,
@@ -197,6 +206,12 @@ async function run() {
     app.post("/work", async (req, res) => {
       const workSheet = req.body;
       const result = await workSheetCollection.insertOne(workSheet);
+      res.send(result);
+    });
+
+    // get all employee work record from db
+    app.get("/works", async (req, res) => {
+      const result = await workSheetCollection.find().toArray();
       res.send(result);
     });
 
