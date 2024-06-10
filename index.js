@@ -10,7 +10,7 @@ const port = process.env.PORT || 5000;
 
 //------ middlewere ----
 const corsOptions = {
-  origin: ["http://localhost:5173", "http://localhost:5174"],
+  origin: ["http://localhost:5173", 'http://localhost:5174', 'https://talentiq-2af8f.web.app'],
   credentials: true,
   optionSuccessStatus: 200,
 };
@@ -23,12 +23,12 @@ const verifyToken = async (req, res, next) => {
   const tokeen = req.cookies?.tokeen;
   // console.log(token);
   if (!tokeen) {
-    return res.status(401).send({ message: "unauthorized access" });
+    return res.status(401).send({ message: "unauthorized access1" });
   }
   jwt.verify(tokeen, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
     if (err) {
       console.log(err);
-      return res.status(401).send({ message: "unauthorized access" });
+      return res.status(401).send({ message: "unauthorized access2" });
     }
     req.user = decoded;
     next();
@@ -82,7 +82,7 @@ async function run() {
     };
 
     // verify host meddlewere
-    const verifyHost = async (req, res, next) => {
+    const verifyHR = async (req, res, next) => {
       const user = req.user;
       const query = { email: user?.email };
       const result = await usersCollection.findOne(query);
@@ -94,7 +94,7 @@ async function run() {
     };
 
     // create-pament -intent
-    app.post("/create-payment-intent", verifyToken, async (req, res) => {
+    app.post("/create-payment-intent", verifyToken, verifyHR, async (req, res) => {
       const salary = req.body.salary;
       const salaryInCent = parseFloat(salary) * 100;
       if (!salary || salaryInCent < 1) return;
@@ -120,7 +120,7 @@ async function run() {
     });
 
     // get a employee paid salary data by email in db
-    app.get("/paid/:email", async (req, res) => {
+    app.get("/paid/:email", verifyToken,  async (req, res) => {
       const email = req.params.email;
       // console.log(email);
       const result = await salaryPaidCollection.find({ email }).toArray();
@@ -150,13 +150,13 @@ async function run() {
       // check user already exist
       const isExist = await usersCollection.findOne(query);
       if (isExist) {
-        // if(user?.verified === 'false'){
-        //   const result = await usersCollection.updateOne(query, {$set: {verified: true}})
-        //   return res.send(result)
-        // } else{
-        //   return res.send(isExist)
-        // }
-        return res.send(isExist);
+        if(user?.role === 'HR'){
+          const result = await usersCollection.updateOne(query, {$set: {role: 'HR'}})
+          return res.send(result)
+        } else{
+          return res.send(isExist)
+        }
+        // return res.send(isExist);
       }
       const option = { upsert: true };
       const updateDoc = {
@@ -170,20 +170,20 @@ async function run() {
     });
 
     // get all employee from db
-    app.get("/users", async (req, res) => {
+    app.get("/users", verifyToken,  async (req, res) => {
       const result = await usersCollection.find().toArray();
       res.send(result);
     });
 
     // get a employee info by email in db
-    app.get("/user/:email", async (req, res) => {
+    app.get("/user/:email", verifyToken, async (req, res) => {
       const email = req.params.email;
       const result = await usersCollection.findOne({ email });
       res.send(result);
     });
 
     // get single data by id from bd
-    app.get("/users/:id", async (req, res) => {
+    app.get("/users/:id", verifyToken, verifyHR, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await usersCollection.findOne(query);
@@ -191,7 +191,7 @@ async function run() {
     });
 
     // update verified status in db
-    app.patch("/user/:email", async (req, res) => {
+    app.patch("/user/:email", verifyToken, verifyHR, async (req, res) => {
       const email = req.params.email;
       const verified = req.body;
       // console.log(verified);
@@ -204,7 +204,7 @@ async function run() {
     });
 
     // save work sheet in db
-    app.post("/work", async (req, res) => {
+    app.post("/work", verifyToken, async (req, res) => {
       const workSheet = req.body;
       const result = await workSheetCollection.insertOne(workSheet);
       res.send(result);
@@ -217,7 +217,7 @@ async function run() {
     });
 
     // get my work sheet data by email
-    app.get("/mywork/:email", async (req, res) => {
+    app.get("/mywork/:email", verifyToken, async (req, res) => {
       const email = req.params.email;
       let query = { email: email };
       const result = await workSheetCollection.find(query).toArray();
@@ -231,15 +231,15 @@ async function run() {
       res.send(result);
     });
 
-       // get testimonials data from db
-       app.get("/testimonial", async (req, res) => {
-        const result = await testimonialsCollection.find().toArray();
-        res.send(result);
-      });
+    // get testimonials data from db
+    app.get("/testimonial",  async (req, res) => {
+      const result = await testimonialsCollection.find().toArray();
+      res.send(result);
+    });
 
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
+    // console.log(
+    //   "Pinged your deployment. You successfully connected to MongoDB!"
+    // );
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
